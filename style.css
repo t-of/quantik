@@ -113,3 +113,5 @@ button { font: inherit; color: inherit; }
 .fig__cell--win { fill: #ffd35c; }
 .fig__quad { stroke: #140b06; stroke-width: 3; }
 .fig__x { stroke: #ff7a6b; stroke-width: 3; stroke-linecap: round; }
+.board3d--title { flex: none; height: 200px; min-height: 0; }
+.board3d--title .board3d__canvas { touch-action: auto; cursor: default; }

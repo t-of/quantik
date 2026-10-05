@@ -47,11 +47,12 @@ function legalCells(board, side, shape) {
 }
 function playerLabel(side) {
   if (G.mode === '2p') return side === 0 ? '1人目' : '2人目';
+  if (G.mode === 'cvc') return side === 0 ? 'CPU（先手）' : 'CPU（後手）';
   return side === G.human ? 'あなた' : 'CPU';
 }
-function isCpuTurn() { return G.mode === 'cpu' && G.turn !== G.human && !G.winner; }
+function isCpuTurn() { return !G.winner && (G.mode === 'cvc' || (G.mode === 'cpu' && G.turn !== G.human)); }
 function isInteractive() {
-  return !G.winner && (G.mode === '2p' || G.turn === G.human);
+  return !G.winner && (G.mode === '2p' || (G.mode === 'cpu' && G.turn === G.human));
 }
 function canPlace() { return isInteractive() && selected != null; }
 
@@ -115,10 +116,13 @@ function maybeCpuTurn() {
   cpu.onmessage = (e) => {
     if (e.data.id !== cpuAsk || myEpoch !== epoch) return; // やり直し・待った のあとの返事は捨てる
     const { cell, shape, win } = e.data;
-    G.note = win ? 'CPU: 勝ちを読み切りました' : 'CPU: 読み切りでは負け。あなたの間違いを待っています';
+    G.note = G.mode === 'cvc' ? `${playerLabel(G.turn)}: ${win ? '勝ちを読み切りました' : '読み切りでは負け'}`
+      : win ? 'CPU: 勝ちを読み切りました' : 'CPU: 読み切りでは負け。あなたの間違いを待っています';
     placePiece(cell, shape);
   };
-  cpu.postMessage({ id, board: G.board, side: G.turn });
+  // CPU 同士は速すぎて見えないので、1 手ごとに少し間をあける
+  if (G.mode === 'cvc') setTimeout(() => { if (myEpoch === epoch) cpu.postMessage({ id, board: G.board, side: G.turn }); }, 700);
+  else cpu.postMessage({ id, board: G.board, side: G.turn });
 }
 
 // ---- 斜め上から見た立体のコマ（手持ちの SVG）。形ごとに別の体積を描く ----
@@ -258,9 +262,13 @@ function pieceMesh(shape, side) {
   return m;
 }
 
+// タイトルに出す見本の盤面（対局の途中の一場面）。値は (色 << 2) | 形
+const DEMO_BOARD = Array(16).fill(-1);
+Object.assign(DEMO_BOARD, { 0: 0, 3: 3, 5: 5, 6: 2, 9: 7, 10: 4, 15: 1 });
+
 const pieceMeshes = new Map(); // マス番号 → コマ
 function syncScene() {
-  G.board.forEach((v, i) => {
+  (G ? G.board : DEMO_BOARD).forEach((v, i) => {
     if (v >= 0 && !pieceMeshes.has(i)) {
       const m = pieceMesh(v & 3, v >> 2);
       m.position.set(cellMeshes[i].position.x, 0, cellMeshes[i].position.z);
@@ -272,9 +280,9 @@ function syncScene() {
       pieceMeshes.delete(i);
     }
   });
-  const legal = canPlace() ? legalCells(G.board, G.turn, selected) : [];
+  const legal = G && canPlace() ? legalCells(G.board, G.turn, selected) : [];
   cellMeshes.forEach((m, i) => m.material.color.setHex(
-    G.winLine && G.winLine.includes(i) ? CELL_COLOR.win
+    G?.winLine?.includes(i) ? CELL_COLOR.win
       : legal.includes(i) && G.board[i] < 0 ? CELL_COLOR.open
         : quadrantBase(i)));
   draw();
@@ -311,21 +319,24 @@ canvas.addEventListener('pointerup', (e) => {
 // ---- 画面 ----
 function render() {
   const stage = document.getElementById('stage');
-  if (!G) { stage.innerHTML = titleHTML(); bindTitle(); return; }
-  stage.innerHTML = gameHTML();
+  stage.innerHTML = G ? gameHTML() : titleHTML();
   document.getElementById('board3d').appendChild(canvas);
+  controls.enabled = !!G; // タイトルの盤は眺めるだけ（スクロールの邪魔をしない）
   syncScene();
-  bindGame();
+  document.getElementById('home').hidden = !G;
+  if (G) bindGame(); else bindTitle();
 }
 
 function titleHTML() {
   return `
     <div class="title">
       <h2>quantik</h2>
+      <div class="board3d board3d--title" id="board3d"></div>
       <p class="hint">4×4 の盤に球・立方体・円錐・円柱を 2 個ずつ。行・列・区画のどれかで 4 種そろえたら勝ち</p>
       <button class="pill pill--big" data-start="cpu0">CPU と対戦（先手）</button>
       <button class="pill pill--big" data-start="cpu1">CPU と対戦（後手）</button>
       <button class="pill pill--big" data-start="2p">2人で遊ぶ</button>
+      <button class="pill pill--big" data-start="cvc">CPU 同士の対戦を見る</button>
       ${rulesHTML()}
     </div>`;
 }
@@ -380,7 +391,7 @@ function rulesHTML() {
 function bindTitle() {
   document.querySelectorAll('[data-start]').forEach((b) => b.addEventListener('click', () => {
     const v = b.dataset.start;
-    if (v === '2p') newGame('2p', null); else newGame('cpu', v === 'cpu0' ? 0 : 1);
+    if (v === '2p' || v === 'cvc') newGame(v, null); else newGame('cpu', v === 'cpu0' ? 0 : 1);
   }));
 }
 
@@ -396,7 +407,7 @@ function gameHTML() {
   const again = G.winner != null ? `
     <div class="result">
       <button class="pill pill--big" data-again>もう一度</button>
-      <button class="pill" data-title>モードを選び直す</button>
+      <button class="pill" data-title>ホームに戻る</button>
     </div>` : '';
 
   return `
@@ -407,8 +418,7 @@ function gameHTML() {
       <p class="hint">ドラッグで回す・ピンチで寄る</p>
       <div class="tray">${tray}</div>
       <div class="controls">
-        <button class="pill" data-undo ${canUndo ? '' : 'disabled'}>1手戻す</button>
-        <button class="pill" data-title>やめる</button>
+        ${G.mode === 'cvc' ? '' : `<button class="pill" data-undo ${canUndo ? '' : 'disabled'}>1手戻す</button>`}
       </div>
       ${again}
     </div>`;
@@ -434,7 +444,9 @@ function bindGame() {
   const again = document.querySelector('[data-again]');
   if (again) again.addEventListener('click', () => newGame(G.mode, G.human));
   const title = document.querySelector('[data-title]');
-  if (title) title.addEventListener('click', () => { epoch++; G = null; render(); });
+  if (title) title.addEventListener('click', goHome);
 }
+function goHome() { epoch++; G = null; render(); }
+document.getElementById('home').addEventListener('click', goHome);
 
 render();
