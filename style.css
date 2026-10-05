@@ -1,11 +1,11 @@
 :root {
-  --bg: #20242c;
+  --bg: #2d2a26;
   --fg: #eceef3;
   --muted: #9aa0ab;
   --accent: #ffd35c;
-  --p0: #ffd35c;
-  --p1: #6fc3ff;
-  --line: rgba(255, 255, 255, 0.14);
+  --p0: #eadcc0;
+  --p1: #e2855a;
+  --line: rgba(255, 235, 200, 0.14);
 }
 
 * { box-sizing: border-box; }
@@ -65,7 +65,7 @@ button { font: inherit; color: inherit; }
 .pill--big { padding: 12px 20px; font-size: 15px; width: 100%; max-width: 260px; }
 .pill[disabled] { opacity: 0.4; cursor: default; }
 
-.status { margin: 0; font-size: 15px; }
+.status { margin: 0; font-size: 14px; text-align: center; }
 .note { margin: 0; min-height: 1.3em; font-size: 12px; color: var(--muted); text-align: center; }
 
 .board {
@@ -80,7 +80,7 @@ button { font: inherit; color: inherit; }
   overflow: hidden;
 }
 .cell {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 235, 200, 0.04);
   border: none;
   display: grid;
   place-items: center;
@@ -105,7 +105,7 @@ button { font: inherit; color: inherit; }
 }
 .shape-btn {
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 235, 200, 0.05);
   border-radius: 8px;
   padding: 6px 2px;
   display: flex;
