@@ -95,3 +95,22 @@ button { font: inherit; color: inherit; }
 
 .controls { display: flex; gap: 8px; }
 .result { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 4px; }
+
+/* ルール説明の図 */
+.title { overflow-y: auto; max-height: 100%; }
+.rules { width: 100%; font-size: 13px; color: var(--muted); line-height: 1.6; }
+.rules summary { cursor: pointer; text-align: center; color: var(--fg); padding: 6px; }
+.rules h3 { margin: 14px 0 6px; font-size: 14px; color: var(--fg); }
+.rules ul { margin: 0; padding-left: 1.3em; }
+.figs { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.figs__item { margin: 0; flex: 1 1 150px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.figs__item figcaption { text-align: left; }
+.fig { max-width: 100%; height: auto; }
+.fig__set { display: flex; gap: 4px; }
+.fig__board { fill: #6a4329; }
+.fig__cell--a { fill: #4a2e1c; }
+.fig__cell--b { fill: #40281a; }
+.fig__cell--win { fill: #ffd35c; }
+.fig__quad { stroke: #140b06; stroke-width: 3; }
+.fig__x { stroke: #ff7a6b; stroke-width: 3; stroke-linecap: round; }
+.note--tut { font-size: 13px; color: var(--fg); min-height: 2.6em; max-width: 340px; }
