@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "quantik — 4種の形で3目並べ、読み切りCPU",
+  "short_name": "quantik",
+  "description": "4×4の盤に4種の形を置き、縦・横・区画で4種を揃えたら勝ちの対戦パズル",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#20242c",
+  "theme_color": "#20242c",
+  "lang": "ja",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,121 @@
+:root {
+  --bg: #20242c;
+  --fg: #eceef3;
+  --muted: #9aa0ab;
+  --accent: #ffd35c;
+  --p0: #ffd35c;
+  --p1: #6fc3ff;
+  --line: rgba(255, 255, 255, 0.14);
+}
+
+* { box-sizing: border-box; }
+
+/* Safari 26 の上下バーの色は html の背景から取られる。body と同じ色にしておく */
+html { background-color: var(--bg); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+/* 画面の端に置くものはセーフエリアの分だけ内側に。高さは 100vh ではなく 100dvh */
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding:
+    max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+}
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bar__title { margin: 0; font-size: 18px; }
+.bar__actions { display: flex; gap: 8px; }
+.pill {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  touch-action: manipulation;   /* ダブルタップ拡大を止める */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.credit { text-align: center; font-size: 12px; color: var(--muted); }
+.credit a { color: inherit; }
+
+/* 全画面のオーバーレイは opacity ではなく display: none で隠す */
+
+.title, .game { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+.title { max-width: 340px; }
+.game { width: 100%; max-width: 420px; gap: 8px; }
+.title h2 { margin: 0; }
+.hint { margin: 0; font-size: 13px; color: var(--muted); text-align: center; }
+.pill--big { padding: 12px 20px; font-size: 15px; width: 100%; max-width: 260px; }
+.pill[disabled] { opacity: 0.4; cursor: default; }
+
+.status { margin: 0; font-size: 15px; }
+.note { margin: 0; min-height: 1.3em; font-size: 12px; color: var(--muted); text-align: center; }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: 100%;
+  aspect-ratio: 1;
+  gap: 2px;
+  background: var(--line);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.cell {
+  background: rgba(255, 255, 255, 0.04);
+  border: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.cell--qr { border-right: 3px solid var(--line); margin-right: -1px; }
+.cell--qb { border-bottom: 3px solid var(--line); margin-bottom: -1px; }
+.cell--legal { background: rgba(255, 211, 92, 0.18); }
+.cell--legal:active { background: rgba(255, 211, 92, 0.35); }
+.cell--win { background: rgba(120, 230, 150, 0.3); }
+.cell[disabled] { cursor: default; }
+
+.piece { font-size: clamp(20px, 7vw, 32px); line-height: 1; }
+.piece--p0 { color: var(--p0); }
+.piece--p1 { color: var(--p1); }
+
+.tray {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+.shape-btn {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 6px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.shape-btn small { color: var(--muted); font-size: 11px; }
+.shape-btn--on { border-color: var(--accent); background: rgba(255, 211, 92, 0.15); }
+.shape-btn[disabled] { opacity: 0.35; }
+
+.controls { display: flex; gap: 8px; }
+.result { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 4px; }
