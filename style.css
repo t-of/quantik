@@ -113,4 +113,3 @@ button { font: inherit; color: inherit; }
 .fig__cell--win { fill: #ffd35c; }
 .fig__quad { stroke: #140b06; stroke-width: 3; }
 .fig__x { stroke: #ff7a6b; stroke-width: 3; stroke-linecap: round; }
-.note--tut { font-size: 13px; color: var(--fg); min-height: 2.6em; max-width: 340px; }

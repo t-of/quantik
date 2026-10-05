@@ -34,7 +34,6 @@ import { checkWin, genMoves, blocked, decode, winningLines } from './ai.js';
 let G = null; // 対局中の状態。null ならタイトル画面
 let selected = null; // 今選んでいる形（0〜3）
 let epoch = 0; // 新しい対局・待った のたびに増やし、古い CPU の返事を無視する
-let tutorial = null; // null なら通常。{ step, done } ならチュートリアル中
 
 function remaining(board, side) {
   const n = [2, 2, 2, 2];
@@ -52,7 +51,6 @@ function playerLabel(side) {
 }
 function isCpuTurn() { return G.mode === 'cpu' && G.turn !== G.human && !G.winner; }
 function isInteractive() {
-  if (tutorial) return !tutorial.done;
   return !G.winner && (G.mode === '2p' || G.turn === G.human);
 }
 function canPlace() { return isInteractive() && selected != null; }
@@ -70,54 +68,7 @@ function firstShape() {
   return moves.length ? decode(moves[0])[1] : null;
 }
 
-// ---- チュートリアル（決まった盤面で、指示どおりの 1 手を置かせる。相手は動かない） ----
-// rulesHTML() と同じ順・同じ言葉づかい。pieces: { マス: [形, 色] }（色 1 が相手）。ok(cell, shape) に合う手だけ受け付ける。
-const TUTORIAL_STEPS = [
-  {
-    title: '置く',
-    text: '下から形を選び、光っているマスをタップして置いてみよう。',
-    pieces: {}, shape: 0,
-    ok: () => true,
-  },
-  {
-    title: '相手と同じ形は並べられない',
-    text: '相手の球と同じ行・列・区画には、自分の球を置けない。球を選んで、置けるマスに置いてみよう。',
-    pieces: { 5: [0, 1] }, shape: 0,
-    ok: (cell, shape) => shape === 0,
-  },
-  {
-    title: '行・列で 4 種そろえて勝ち',
-    text: '色はどちらでもよい。上の行に足りない形を置いて、4 種をそろえよう。',
-    pieces: { 0: [0, 0], 1: [1, 1], 2: [2, 0] }, shape: 0,
-    ok: (cell, shape) => cell === 3 && shape === 3,
-  },
-  {
-    title: '区画でも勝ち',
-    text: '太い線で区切った 2×2 の区画でも、4 種そろえれば勝ち。右下の区画をそろえよう。',
-    pieces: { 10: [3, 1], 11: [0, 0], 14: [2, 1] }, shape: 0,
-    ok: (cell, shape) => cell === 15 && shape === 1,
-  },
-];
-function startTutorial(step = 0) {
-  epoch++;
-  tutorial = { step, done: false };
-  const t = TUTORIAL_STEPS[step];
-  const board = Array(16).fill(-1);
-  for (const [c, [shape, side]] of Object.entries(t.pieces)) board[c] = (side << 2) | shape;
-  G = { mode: 'tut', human: 0, board, turn: 0, winner: null, winLine: null, note: null, history: [] };
-  selected = t.shape;
-  render();
-}
-
 function placePiece(cell, shape) {
-  if (tutorial) {
-    if (tutorial.done || !TUTORIAL_STEPS[tutorial.step].ok(cell, shape)) return; // 指示と違う手は受け付けない
-    G.board[cell] = shape;
-    G.winLine = winningLines(G.board, cell)[0] || null;
-    tutorial.done = true;
-    render();
-    return;
-  }
   G.history.push({ board: G.board.slice(), turn: G.turn, note: G.note });
   G.board[cell] = (G.turn << 2) | shape;
   const win = checkWin(G.board, cell);
@@ -375,7 +326,6 @@ function titleHTML() {
       <button class="pill pill--big" data-start="cpu0">CPU と対戦（先手）</button>
       <button class="pill pill--big" data-start="cpu1">CPU と対戦（後手）</button>
       <button class="pill pill--big" data-start="2p">2人で遊ぶ</button>
-      <button class="pill pill--big" data-tutorial>チュートリアル</button>
       ${rulesHTML()}
     </div>`;
 }
@@ -432,13 +382,11 @@ function bindTitle() {
     const v = b.dataset.start;
     if (v === '2p') newGame('2p', null); else newGame('cpu', v === 'cpu0' ? 0 : 1);
   }));
-  document.querySelector('[data-tutorial]').addEventListener('click', () => startTutorial());
 }
 
 function gameHTML() {
   const interactive = isInteractive();
 
-  if (tutorial) return tutorialHTML();
   let status;
   if (G.winner != null) status = `${playerLabel(G.winner)} の勝ち！`;
   else status = `${playerLabel(G.turn)} の番`;
@@ -466,23 +414,6 @@ function gameHTML() {
     </div>`;
 }
 
-function tutorialHTML() {
-  const t = TUTORIAL_STEPS[tutorial.step];
-  const last = tutorial.step === TUTORIAL_STEPS.length - 1;
-  const next = last ? '<button class="pill" data-title>おわる</button>' : '<button class="pill" data-next>次へ</button>';
-  return `
-    <div class="game">
-      <p class="status">チュートリアル ${tutorial.step + 1}/${TUTORIAL_STEPS.length}：${t.title}</p>
-      <p class="note note--tut">${tutorial.done ? (G.winLine ? 'そろった！ これで勝ち。' : 'できた！') : t.text}</p>
-      <div class="board3d" id="board3d"></div>
-      <div class="tray">${trayHTML(isInteractive())}</div>
-      <div class="controls">
-        ${tutorial.done ? next : '<button class="pill" data-retry>やり直す</button>'}
-        ${last && tutorial.done ? '' : '<button class="pill" data-title>やめる</button>'}
-      </div>
-    </div>`;
-}
-
 function trayHTML(interactive) {
   return [0, 1, 2, 3].map((s) => {
     const left = remaining(G.board, G.turn)[s];
@@ -503,11 +434,7 @@ function bindGame() {
   const again = document.querySelector('[data-again]');
   if (again) again.addEventListener('click', () => newGame(G.mode, G.human));
   const title = document.querySelector('[data-title]');
-  if (title) title.addEventListener('click', () => { epoch++; G = null; tutorial = null; render(); });
-  const next = document.querySelector('[data-next]');
-  if (next) next.addEventListener('click', () => startTutorial(tutorial.step + 1));
-  const retry = document.querySelector('[data-retry]');
-  if (retry) retry.addEventListener('click', () => startTutorial(tutorial.step));
+  if (title) title.addEventListener('click', () => { epoch++; G = null; render(); });
 }
 
 render();
